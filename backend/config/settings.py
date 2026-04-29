@@ -3,8 +3,14 @@ import dj_database_url
 from pathlib import Path
 from corsheaders.defaults import default_headers
 
+# =========================
+# BASE
+# =========================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# =========================
+# SECURITY
+# =========================
 SECRET_KEY = os.environ.get(
     "SECRET_KEY",
     "django-insecure-56-oy76b#93a5%!)pxf!*$ip&q18r@qnh^0&4pk53yu3qaj4s7",
@@ -14,6 +20,9 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
+# =========================
+# APPLICATIONS
+# =========================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -30,21 +39,33 @@ INSTALLED_APPS = [
     "payouts",
 ]
 
+# =========================
+# MIDDLEWARE (IMPORTANT ORDER)
+# =========================
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",   # MUST be first
+
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+
     "django.middleware.csrf.CsrfViewMiddleware",
+
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# =========================
+# URLS
+# =========================
 ROOT_URLCONF = "config.urls"
 
+# =========================
+# TEMPLATES
+# =========================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -60,8 +81,14 @@ TEMPLATES = [
     },
 ]
 
+# =========================
+# WSGI
+# =========================
 WSGI_APPLICATION = "config.wsgi.application"
 
+# =========================
+# DATABASE
+# =========================
 DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3"),
@@ -69,6 +96,9 @@ DATABASES = {
     )
 }
 
+# =========================
+# PASSWORD VALIDATION
+# =========================
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -76,17 +106,29 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# =========================
+# INTERNATIONALIZATION
+# =========================
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# =========================
+# STATIC FILES
+# =========================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# =========================
+# DEFAULT PK
+# =========================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# =========================
+# CORS (FRONTEND ACCESS)
+# =========================
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://fintech-payout-engine.vercel.app",
@@ -107,6 +149,16 @@ CORS_ALLOW_METHODS = [
     "OPTIONS",
 ]
 
+# =========================
+# CSRF FIX (IMPORTANT 🔥)
+# =========================
+CSRF_TRUSTED_ORIGINS = [
+    "https://fintech-payout-engine.vercel.app",
+]
+
+# =========================
+# CELERY (OPTIONAL)
+# =========================
 CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
