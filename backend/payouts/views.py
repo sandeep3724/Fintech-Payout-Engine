@@ -99,12 +99,12 @@ class PayoutCreateView(APIView):
                 )
 
                 def enqueue_payout():
-    try:
-        process_payout.delay(payout.id)
-    except Exception as e:
-        print("Celery enqueue failed:", str(e))
+                    try:
+                        process_payout.delay(payout.id)
+                    except Exception as e:
+                        print("Celery enqueue failed:", str(e))
 
-on_commit(enqueue_payout)
+                on_commit(enqueue_payout)
 
                 return Response(
                     PayoutSerializer(payout).data,
