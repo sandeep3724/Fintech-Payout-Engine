@@ -89,7 +89,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://YOUR_FRONTEND_URL.vercel.app",
+    "https://fintech-payout-engine.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
