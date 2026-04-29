@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
+from .views import create_payout, merchant_dashboard
 
 urlpatterns = [
-    path('', views.payout_list),   # example
+    path("payouts/", create_payout),
+    path("merchants/<int:merchant_id>/dashboard/", merchant_dashboard),
 ]

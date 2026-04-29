@@ -16,6 +16,10 @@ from ledger.services import get_available_balance_paise
 from .models import Payout
 from .serializers import PayoutCreateSerializer, PayoutSerializer
 from .tasks import process_payout
+from django.http import JsonResponse
+
+def payout_list(request):
+    return JsonResponse({"message": "Payout API working"})
 
 
 class PayoutCreateView(APIView):
