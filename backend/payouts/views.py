@@ -1,28 +1,30 @@
 from uuid import UUID
 
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.transaction import on_commit
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
+from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
-from merchants.models import Merchant, BankAccount
+from merchants.models import BankAccount, Merchant
 from ledger.models import LedgerEntry
 from ledger.services import get_available_balance_paise
 
 from .models import Payout
 from .serializers import PayoutCreateSerializer, PayoutSerializer
 from .tasks import process_payout
-from django.http import JsonResponse
-
-def create_payout(request):
-    return JsonResponse({"message": "Payout API working"})
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class PayoutCreateView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request):
         idempotency_key = request.headers.get("Idempotency-Key")
 
@@ -53,7 +55,6 @@ class PayoutCreateView(APIView):
             with transaction.atomic():
                 merchant = Merchant.objects.select_for_update().get(id=merchant_id)
 
-                # Idempotency check
                 existing_payout = Payout.objects.filter(
                     merchant=merchant,
                     idempotency_key=idempotency_key,
@@ -97,7 +98,6 @@ class PayoutCreateView(APIView):
                     reference_id=f"payout:{payout.id}",
                 )
 
-                # Trigger async task after DB commit
                 on_commit(lambda: process_payout.delay(payout.id))
 
                 return Response(
@@ -134,7 +134,6 @@ class PayoutDetailView(RetrieveAPIView):
     serializer_class = PayoutSerializer
 
 
-# ✅ FIXED: moved outside class + proper indentation
 @api_view(["GET"])
 def merchant_dashboard(request, merchant_id):
     try:
@@ -147,8 +146,13 @@ def merchant_dashboard(request, merchant_id):
 
     available_balance = get_available_balance_paise(merchant)
 
-    payouts = Payout.objects.filter(merchant=merchant).order_by("-created_at")[:10]
-    ledger_entries = LedgerEntry.objects.filter(merchant=merchant).order_by("-created_at")[:10]
+    payouts = Payout.objects.filter(
+        merchant=merchant
+    ).order_by("-created_at")[:10]
+
+    ledger_entries = LedgerEntry.objects.filter(
+        merchant=merchant
+    ).order_by("-created_at")[:10]
 
     held_balance = sum(
         payout.amount_paise
@@ -158,23 +162,25 @@ def merchant_dashboard(request, merchant_id):
         )
     )
 
-    return Response({
-        "merchant": {
-            "id": merchant.id,
-            "name": merchant.name,
-            "email": merchant.email,
-        },
-        "available_balance_paise": available_balance,
-        "held_balance_paise": held_balance,
-        "ledger_entries": [
-            {
-                "id": entry.id,
-                "entry_type": entry.entry_type,
-                "amount_paise": entry.amount_paise,
-                "description": entry.description,
-                "created_at": entry.created_at,
-            }
-            for entry in ledger_entries
-        ],
-        "payouts": PayoutSerializer(payouts, many=True).data,
-    })
+    return Response(
+        {
+            "merchant": {
+                "id": merchant.id,
+                "name": merchant.name,
+                "email": merchant.email,
+            },
+            "available_balance_paise": available_balance,
+            "held_balance_paise": held_balance,
+            "ledger_entries": [
+                {
+                    "id": entry.id,
+                    "entry_type": entry.entry_type,
+                    "amount_paise": entry.amount_paise,
+                    "description": entry.description,
+                    "created_at": entry.created_at,
+                }
+                for entry in ledger_entries
+            ],
+            "payouts": PayoutSerializer(payouts, many=True).data,
+        }
+    )
