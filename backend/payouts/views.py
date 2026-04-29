@@ -18,7 +18,7 @@ from .serializers import PayoutCreateSerializer, PayoutSerializer
 from .tasks import process_payout
 from django.http import JsonResponse
 
-def payout_list(request):
+def create_payout(request):
     return JsonResponse({"message": "Payout API working"})
 
 
